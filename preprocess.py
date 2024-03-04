@@ -9,9 +9,10 @@ import pandas as pd
 import numpy as np
 import json
 import random
-import openai
+from openai import OpenAI
 
-openai.api_key = 'xxxxxx' #add you own API key
+OpenAI.base_url = 'api.playaichat.cn'
+OpenAI.api_key = 'xxxxxx' #add you own API key
 # 1. data preparation. Load choice13k problems
 def preprocess_data(data):
     
@@ -59,7 +60,8 @@ def option_prompt_generate(p,v):
     return(option)
 
 def get_embeddings(text, model): 
-    response = openai.Embedding.create(
+    response = OpenAI.embeddings.create(
+            model='text-embedding-3-large',
             input=text,
             engine= model) 
     return response

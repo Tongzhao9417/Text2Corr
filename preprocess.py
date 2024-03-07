@@ -11,10 +11,10 @@ import json
 import random
 from openai import OpenAI
 
-client = OpenAI(
-    base_url='https://api.playaichat.cn/v1',
-    api_key='sk-1YB0mO1LV4K8o37TB58090D13fBf4035BfA5098e9845Ae50'
-)
+# client = OpenAI(
+#     base_url='https://api.playaichat.cn/v1',
+#     api_key='sk-1YB0mO1LV4K8o37TB58090D13fBf4035BfA5098e9845Ae50'
+# )
 
 # OpenAI.base_url = 'api.playaichat.cn'
 # OpenAI.api_key = 'sk-HhQyVUlh1xKT3cBhF2014f96621e40CcB54c8a5f5788D45e' #add you own API key
@@ -64,7 +64,17 @@ def option_prompt_generate(p,v):
     
     return(option)
 
+# 我把API的调用放在了这里，做成了pool。目前来看反而速度更慢了…瓶颈应该在embedding的for循环那里
 def get_embeddings(text, model): 
+    api_key_pool = ['sk-1YB0mO1LV4K8o37TB58090D13fBf4035BfA5098e9845Ae50',
+                    'sk-XTG56fCXh4VsTPIo29C74b13B59b4b0f84BfFbC3Ae0970A2',
+                    'sk-gp7WyWMVeS84nIhm375e8a42Ab9b44EfB5C9Bf1031D716Af',
+                    'sk-OAMlsfh0mnGprrlzD5Ce501cBa6c4eC4B65bE69c1aBd542a',
+                    'sk-h3u736qczLvrWdYoF39290286aC24655934a819b2d35Fd7c']
+    client = OpenAI(
+    base_url='https://api.playaichat.cn/v1',
+    api_key=random.choice(api_key_pool)
+)
     response = client.embeddings.create(
             model='text-embedding-ada-002',
             input=text,
@@ -177,6 +187,21 @@ def behavioral_embedding_model(behavioral_data):
     behavioral_embedding_dataset = np.array(behavioral_embedding_dataset,dtype='float32')
     return behavioral_embedding_dataset
 
+# 想在这里加并行处理
+def text_embedding_multiple(behavioral_data):
+    prompt_dataset = np.empty((0,1))
+    tmp_data = behavioral_data.iloc
+    tmp_prompt = option_prompt_generate(tmp_data['p'],tmp_data['v'])
+    prompt_dataset = np.vstack([prompt_dataset,tmp_prompt])
+    model_name = 'text-embedding-ada-002'
+    text_problem_embeddings = np.empty((prompt_dataset.shape[0],1536))
+    tmp_embeddings = get_embeddings(prompt_dataset,model_name)
+    text_problem_embeddings = tmp_embeddings.data[0].embedding
+    text_problem_embeddings = np.array(text_problem_embeddings,dtype='float32')
+    print('====Processing',behavioral_data,'====')
+    return(text_problem_embeddings)
+
+
 def text_embedding(behavioral_data, query):
     if query == 'local':
         text_problem_embeddings = np.load('result/c13k_problem_embeddings.npy')
@@ -194,7 +219,7 @@ def text_embedding(behavioral_data, query):
             tmp_embeddings = get_embeddings(prompt_dataset[i,0],model_name)
             # text_problem_embeddings [i,:] = tmp_embeddings['data'][0]['embedding']
             text_problem_embeddings [i,:] = tmp_embeddings.data[0].embedding
-    
+            print('====Processing No. ',i, 'data====')
     text_problem_embeddings = np.array(text_problem_embeddings,dtype='float32')
     return(text_problem_embeddings)
 

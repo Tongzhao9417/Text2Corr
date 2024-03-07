@@ -12,8 +12,8 @@ import random
 from openai import OpenAI
 
 client = OpenAI(
-    base_url='https://one.aiskt.com/v1',
-    api_key=''
+    base_url='https://api.playaichat.cn/v1',
+    api_key='sk-1YB0mO1LV4K8o37TB58090D13fBf4035BfA5098e9845Ae50'
 )
 
 # OpenAI.base_url = 'api.playaichat.cn'
@@ -66,13 +66,13 @@ def option_prompt_generate(p,v):
 
 def get_embeddings(text, model): 
     response = client.embeddings.create(
-            model='text-embedding-3-large',
+            model='text-embedding-ada-002',
             input=text,
-            dimensions=1536
+            # dimensions=1536
             #engine= model
             ) 
     # response = OpenAI.embeddings.create(
-    #         model='text-embedding-3-large',
+    #         model='text-embedding-ada-002',
     #         input=text,
     #         engine= model) 
     return response
@@ -188,7 +188,7 @@ def text_embedding(behavioral_data, query):
             tmp_prompt = np.array(tmp_prompt, dtype ='object')
             prompt_dataset = np.vstack([prompt_dataset,tmp_prompt])
             
-        model_name = 'text-embedding-3-large'
+        model_name = 'text-embedding-ada-002'
         text_problem_embeddings = np.empty((prompt_dataset.shape[0],1536))
         for i in range(prompt_dataset.shape[0]):
             tmp_embeddings = get_embeddings(prompt_dataset[i,0],model_name)

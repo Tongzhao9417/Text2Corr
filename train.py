@@ -48,7 +48,7 @@ class FeatureLoss(nn.Module):
         return feature_loss
     
 
-c13k_problems = pd.read_json("data/c13k_problems_test.json", orient='index')
+c13k_problems = pd.read_json("data/c13k_problems.json", orient='index')
 behavioral_embeddings = behavioral_embedding_model(c13k_problems)
 c13k_problems_prepro = preprocess_data(c13k_problems)
 text_problem_embeddings = text_embedding(c13k_problems_prepro,query = 'online')

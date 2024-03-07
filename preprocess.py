@@ -11,8 +11,13 @@ import json
 import random
 from openai import OpenAI
 
-OpenAI.base_url = 'api.playaichat.cn'
-OpenAI.api_key = 'xxxxxx' #add you own API key
+client = OpenAI(
+    base_url='https://one.aiskt.com/v1',
+    api_key=''
+)
+
+# OpenAI.base_url = 'api.playaichat.cn'
+# OpenAI.api_key = 'sk-HhQyVUlh1xKT3cBhF2014f96621e40CcB54c8a5f5788D45e' #add you own API key
 # 1. data preparation. Load choice13k problems
 def preprocess_data(data):
     
@@ -60,10 +65,16 @@ def option_prompt_generate(p,v):
     return(option)
 
 def get_embeddings(text, model): 
-    response = OpenAI.embeddings.create(
+    response = client.embeddings.create(
             model='text-embedding-3-large',
             input=text,
-            engine= model) 
+            dimensions=1536
+            #engine= model
+            ) 
+    # response = OpenAI.embeddings.create(
+    #         model='text-embedding-3-large',
+    #         input=text,
+    #         engine= model) 
     return response
 
 
@@ -168,7 +179,7 @@ def behavioral_embedding_model(behavioral_data):
 
 def text_embedding(behavioral_data, query):
     if query == 'local':
-        text_problem_embeddings = np.load('../result/c13k_problem_embeddings.npy')
+        text_problem_embeddings = np.load('result/c13k_problem_embeddings.npy')
     elif query == 'online':
         prompt_dataset = np.empty((0,1))   
         for i in range(behavioral_data.shape[0]):
@@ -177,11 +188,12 @@ def text_embedding(behavioral_data, query):
             tmp_prompt = np.array(tmp_prompt, dtype ='object')
             prompt_dataset = np.vstack([prompt_dataset,tmp_prompt])
             
-        model_name = 'text-embedding-ada-002'
+        model_name = 'text-embedding-3-large'
         text_problem_embeddings = np.empty((prompt_dataset.shape[0],1536))
         for i in range(prompt_dataset.shape[0]):
             tmp_embeddings = get_embeddings(prompt_dataset[i,0],model_name)
-            text_problem_embeddings [i,:] = tmp_embeddings['data'][0]['embedding']
+            # text_problem_embeddings [i,:] = tmp_embeddings['data'][0]['embedding']
+            text_problem_embeddings [i,:] = tmp_embeddings.data[0].embedding
     
     text_problem_embeddings = np.array(text_problem_embeddings,dtype='float32')
     return(text_problem_embeddings)

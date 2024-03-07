@@ -8,9 +8,9 @@ import torch.nn as nn
 import torch
 import pandas as pd
 import numpy as np
-from preprocess import behavioral_embedding_model,text_embedding
+from preprocess import behavioral_embedding_model,text_embedding,preprocess_data
 from Data_loader import create_data_loaders
-from model import JointEmbedding,TextDecisionModel
+from model import TextDecisionModel
 import matplotlib.pyplot as plt
 from preprocess import behavioral_embedding,get_embeddings,option_prompt_generate
 
@@ -48,9 +48,10 @@ class FeatureLoss(nn.Module):
         return feature_loss
     
 
-c13k_problems = pd.read_json("../data/c13k_problems.json", orient='index')
+c13k_problems = pd.read_json("data/c13k_problems_test.json", orient='index')
 behavioral_embeddings = behavioral_embedding_model(c13k_problems)
-text_problem_embeddings = text_embedding(c13k_problems,query = 'local')
+c13k_problems_prepro = preprocess_data(c13k_problems)
+text_problem_embeddings = text_embedding(c13k_problems_prepro,query = 'online')
     
 batch_size= 256
 train_dataloader, val_dataloader,test_dataloader = create_data_loaders(text_problem_embeddings, behavioral_embeddings, batch_size=batch_size, test_size = 0.2, contrastive = False, false_scale = 2, scale = 'outcome_scaling')
@@ -156,7 +157,7 @@ for epoch in range(num_epochs):
         # print(f"Validation Accuracy: {correct_pairs / total_pairs * 100:.2f}%")
 
 model_name = model.__class__.__name__ + '.pth'
-torch.save(model.state_dict(), '../result/' + model_name)
+torch.save(model.state_dict(), 'result/' + model_name)
 
 # Visualizing the losses
 plt.figure(figsize=(6,4))
@@ -167,7 +168,7 @@ plt.title("Dimension-wise Training Losses over Epochs")
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
 # Save the plot with a specific DPI
-plt.savefig('../pic/Text2Decision/training_loss.png', dpi=300)  # 300 DPI is a common high-resolution setting
+plt.savefig('pic/training_loss.png', dpi=300)  # 300 DPI is a common high-resolution setting
 plt.show()
 
 
@@ -180,7 +181,7 @@ plt.title("Dimension-wise Validation Losses over Epochs")
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
 # Save the plot with a specific DPI
-plt.savefig('../pic/Text2Decision/val_loss.png', dpi=300)  # 300 DPI is a common high-resolution setting
+plt.savefig('pic/val_loss.png', dpi=300)  # 300 DPI is a common high-resolution setting
 plt.show()
 
 
@@ -193,9 +194,9 @@ test_behavioral_embedding = behavioral_embedding(test_p, test_v)
 test_behavioral_embedding[[0,1,2,3,4,10]] =  test_behavioral_embedding[[0,1,2,3,4,10]]/1000
 test_text = option_prompt_generate(test_p, test_v)
 print(f"test text : {test_text}")
-model_name = 'text-embedding-ada-002'
+model_name = 'text-embedding-3-large'
 tmp_embeddings = get_embeddings(test_text,model_name)
-tmp_text_embeddings = tmp_embeddings['data'][0]['embedding']
+tmp_text_embeddings = tmp_embeddings.data[0].embedding
 tmp_text_embeddings = torch.tensor(tmp_text_embeddings).to(device)
 model.eval()
 with torch.no_grad():

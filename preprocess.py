@@ -10,6 +10,7 @@ import numpy as np
 import json
 import random
 from openai import OpenAI
+import time
 
 # client = OpenAI(
 #     base_url='https://api.playaichat.cn/v1',
@@ -73,7 +74,7 @@ def get_embeddings(text, model):
                     'sk-h3u736qczLvrWdYoF39290286aC24655934a819b2d35Fd7c']
     client = OpenAI(
     base_url='https://api.playaichat.cn/v1',
-    api_key=random.choice(api_key_pool)
+    api_key='sk-1YB0mO1LV4K8o37TB58090D13fBf4035BfA5098e9845Ae50'
 )
     response = client.embeddings.create(
             model='text-embedding-ada-002',
@@ -203,6 +204,8 @@ def text_embedding_multiple(behavioral_data):
 
 
 def text_embedding(behavioral_data, query):
+    start_time = time.time()
+    print('====开始时间为：',start_time,'====')
     if query == 'local':
         text_problem_embeddings = np.load('result/c13k_problem_embeddings.npy')
     elif query == 'online':
@@ -221,8 +224,36 @@ def text_embedding(behavioral_data, query):
             text_problem_embeddings [i,:] = tmp_embeddings.data[0].embedding
             print('====Processing No. ',i, 'data====')
     text_problem_embeddings = np.array(text_problem_embeddings,dtype='float32')
+    endtime = time.time()
+    print('====结束时间为：',endtime,'====')
+    print('====用时：',endtime-start_time,'====')
     return(text_problem_embeddings)
 
+def text_embedding_direct(behavioral_data, query):
+    start_time = time.time()
+    print('====开始时间为：',start_time,'====')
+    if query == 'local':
+        text_problem_embeddings = np.load('result/c13k_problem_embeddings.npy')
+    elif query == 'online':
+        prompt_dataset = np.empty((0,1))   
+        for i in range(behavioral_data.shape[0]):
+            tmp_data = behavioral_data.iloc[i,:]
+            tmp_prompt = option_prompt_generate(tmp_data['p'],tmp_data['v'])
+            tmp_prompt = np.array(tmp_prompt, dtype ='object')
+            prompt_dataset = np.vstack([prompt_dataset,tmp_prompt])
+            
+        model_name = 'text-embedding-ada-002'
+        text_problem_embeddings = np.empty((prompt_dataset.shape[0],1536))
+        # for i in range(prompt_dataset.shape[0]):
+        tmp_embeddings = get_embeddings(prompt_dataset[i,0],model_name)
+            # text_problem_embeddings [i,:] = tmp_embeddings['data'][0]['embedding']
+        text_problem_embeddings[i,:]  = tmp_embeddings.data[0].embedding
+        # print('====Processing No. ',i, 'data====')
+    text_problem_embeddings = np.array(text_problem_embeddings,dtype='float32')
+    endtime = time.time()
+    print('====结束时间为：',endtime,'====')
+    print('====用时：',endtime-start_time,'====')
+    return(text_problem_embeddings)
 
 def str_to_number(s):
     #s should be a series from dataframe

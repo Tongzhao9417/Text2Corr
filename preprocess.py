@@ -67,25 +67,10 @@ def option_prompt_generate(p,v):
 
 # 我把API的调用放在了这里，做成了pool。目前来看反而速度更慢了…瓶颈应该在embedding的for循环那里
 def get_embeddings(text, model): 
-    api_key_pool = ['sk-1YB0mO1LV4K8o37TB58090D13fBf4035BfA5098e9845Ae50',
-                    'sk-XTG56fCXh4VsTPIo29C74b13B59b4b0f84BfFbC3Ae0970A2',
-                    'sk-gp7WyWMVeS84nIhm375e8a42Ab9b44EfB5C9Bf1031D716Af',
-                    'sk-OAMlsfh0mnGprrlzD5Ce501cBa6c4eC4B65bE69c1aBd542a',
-                    'sk-h3u736qczLvrWdYoF39290286aC24655934a819b2d35Fd7c']
-    client = OpenAI(
-    base_url='https://api.playaichat.cn/v1',
-    api_key='sk-1YB0mO1LV4K8o37TB58090D13fBf4035BfA5098e9845Ae50'
-)
-    response = client.embeddings.create(
+    response = OpenAI.embeddings.create(
             model='text-embedding-ada-002',
             input=text,
-            # dimensions=1536
-            #engine= model
-            ) 
-    # response = OpenAI.embeddings.create(
-    #         model='text-embedding-ada-002',
-    #         input=text,
-    #         engine= model) 
+            engine= model) 
     return response
 
 
@@ -269,3 +254,12 @@ def str_to_number(s):
             A = np.hstack([A,float(strlist[i])])
     return(A)
 
+
+def generate_dataframe(min,max,step,colname):
+    values = []
+    current_value = min
+    while current_value <= max:
+        values.append(current_value)
+        current_value += step
+    df = pd.DataFrame(values,columns = [colname])
+    return df

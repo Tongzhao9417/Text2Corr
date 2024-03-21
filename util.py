@@ -132,3 +132,6 @@ def text_embedding(max_worker,df):
             # df.loc['embedding'] = embedding_result
                 # pbar.update()
     return embedding_result
+
+def behavior_embedding():
+    

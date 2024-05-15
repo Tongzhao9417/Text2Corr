@@ -3,11 +3,20 @@ import pandas as pd
 import re
 from openai import OpenAI
 import concurrent.futures
+from torch import dtype
 from tqdm import tqdm
+import numpy as np
+
+with open ('prompt_constant.txt','r') as f:
+        tmp_prompt_list = f.readlines()
+        prompt_constant = ''.join(tmp_prompt_list[:3])
+        prompt_accept = tmp_prompt_list[3]
+        prompt_reject = tmp_prompt_list[4]
+f.close()
 
 client = OpenAI(
-    base_url='https://aihubmix.com/v1',
-    api_key='sk-Aqqr607kRNHcsHysA5Ca3015Eb62497995CaDf824c22E6A2')
+    base_url='https://api.ohmygpt.com/v1',
+    api_key='sk-byGN2JFH6F68b7814673T3BLbkFJB117792eDB154451aBbf')
 
 def create_dataset(power_range, gain_S_range, gain_O_range, cost_range):
     var_ranges = {
@@ -64,15 +73,18 @@ def create_prompt(df):
 def create_prompt_df(data):
     df = pd.DataFrame(columns = ['option','prompt'])
 
-    with open ('prompt_constant.txt','r') as f:
-        prompt_constant = f.read()
-    f.close()
+    # with open ('prompt_constant.txt','r') as f:
+    #     tmp_prompt_list = f.readlines()
+    #     prompt_constant = ''.join(tmp_prompt_list[:3])
+    #     prompt_accept = tmp_prompt_list[3]
+    #     prompt_reject = tmp_prompt_list[4]
+    # f.close()
 
-    with open ('prompt_option.txt','r') as f:
-        prompt_accept = f.readlines(1)[0]
-    f.close()
+    # with open ('prompt_option.txt','r') as f:
+    #     prompt_accept = f.readlines(1)[0]
+    # f.close()
     # print(prompt_accept)
-    prompt_list = []
+    prompt_list = []    
     for index,row in data.iterrows():
         isCheat_content = ''
         if (row['isCheat'] == 1):
@@ -93,7 +105,7 @@ def create_prompt_df(data):
         # text = replace_strings(prompt_text,replace_dict)
         text_constant = pattern.sub(lambda m: replace_dict[m.group(0)], prompt_constant)
         option_accept = pattern.sub(lambda m: replace_dict[m.group(0)], prompt_accept)
-        option_reject = '如果你拒绝，你和TA会获得0金币，第三方会损失0金币'
+        option_reject = prompt_reject
         
         text_accept = text_constant + '\n' +option_accept
         text_reject = text_constant + '\n' +option_reject
@@ -133,5 +145,32 @@ def text_embedding(max_worker,df):
                 # pbar.update()
     return embedding_result
 
-def behavior_embedding():
+def behavior_embedding(df):
+    data = pd.DataFrame(columns = ['power','gain_S','gain_O','cost','total','isCheat'])
+    for index,row in df.iterrows():
+        exist_row = pd.Series({
+            'power':row['power'],
+            'gain_S':row['gain_S'],
+            'gain_O':row['gain_O'],
+            'cost':row['cost'],
+            'total':row['total'],
+            'isCheat':row['isCheat']
+        })
+        new_row = pd.Series({
+            'power':row['power'],
+            'gain_S':'0',
+            'gain_O':'0',
+            'cost':'0',
+            'total':row['total'],
+            'isCheat':row['isCheat'],
+        })
+        data.loc[len(data.index)] = exist_row
+        data.loc[len(data.index)] = new_row
+    behavior_embedding = np.array(data,dtype = 'float64')
+    return behavior_embedding
+    # behavior_embedding = np.array(df)
+    # behavior_embedding = np.hstack(behavior_embedding)
+    # return behavior_embedding
+    # gain_S = df['gain_S']
+    
     
